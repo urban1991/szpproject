@@ -3,21 +3,50 @@
 import { useState } from 'react';
 import {ForPeteSakePage} from "@/app/interpreter";
 
+const exampleProgram = `// Program demonstrujący zupełność Turinga w ForPeteSake
+// 1. Rozgałęzienie warunkowe
+// 2. Iteracja
+// 3. Manipulacja pamięcią
+
+// Inicjalizacja: Ustawiamy wartość pierwszej komórki na 3
+pit pit pit
+
+// ITERACJA: Pętla główna wykonuje się 3 razy
+pit?
+  // MANIPULACJA PAMIĘCIĄ: Przesuwamy wskaźnik do komórki 1
+  pete
+
+  // Dodajemy 1 do komórki 1 w każdej iteracji
+  pit
+
+  // MANIPULACJA PAMIĘCIĄ: Przesuwamy wskaźnik z powrotem do komórki 0
+  etepe
+
+  // Zmniejszamy licznik pętli o 1
+  tip
+?tip
+
+// ROZGAŁĘZIENIE WARUNKOWE: Sprawdzamy czy komórka 0 = 0
+// Przesuń do komórki 1 (która ma teraz wartość 3)
+pete
+
+// Dodaj 3 do komórki 1 tylko jeśli komórka 0 = 0
+// (co jest prawdą po zakończeniu pętli)
+etepe
+pit?
+  // Ta część wykona się tylko gdy komórka 0 jest niezerowa
+  pete
+  tip tip tip
+  etepe
+?tip
+
+// W tym momencie:
+// - Komórka 0 ma wartość 0
+// - Komórka 1 ma wartość 3 (po jednym inkremencie w każdej z 3 iteracji)
+`
+
 export default function Home() {
   const [interpreterCode, setInterpreterCode] = useState<string>('');
-  const loadExampleProgram = async () => {
-
-    try {
-      const response = await fetch('/docs/turing_completeness_example.fps');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch example program: ${response.status}`);
-      }
-      const code = await response.text();
-      setInterpreterCode(code);
-    } catch (error) {
-      console.error('Error loading example program:', error);
-    }
-  };
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen gap-16s font-[family-name:var(--font-geist-sans)]">
@@ -39,7 +68,7 @@ export default function Home() {
                   Weryfikacja zupełności Turinga
                 </a>
                 <button
-                  onClick={loadExampleProgram}
+                  onClick={() => setInterpreterCode(exampleProgram)}
                   className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
                 >
                   Program przykładowy

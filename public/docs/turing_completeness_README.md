@@ -16,7 +16,7 @@ Język programowania jest uznawany za **zupełny w sensie Turinga**, jeśli moż
 
 Ten dokument zawiera szczegółowe wyjaśnienie, w jaki sposób ForPeteSake spełnia każde z trzech wymagań zupełności Turinga, wraz z przykładami kodu dla każdego wymagania.
 
-### 2. `turing_completeness_example.fps`
+### 2. `Przykładowy program ForPeteSake`
 
 Jest to kompletny program ForPeteSake, który demonstruje wszystkie trzy wymagania zupełności Turinga w jednym programie:
 - Wykorzystuje pętle do iteracji
@@ -27,8 +27,8 @@ Jest to kompletny program ForPeteSake, który demonstruje wszystkie trzy wymagan
 
 Możesz uruchomić przykładowy program za pomocą interpretera ForPeteSake w tym projekcie:
 
-1. Skopiuj zawartość pliku `turing_completeness_example.fps` do edytora kodu na stronie interpretera
-2. Kliknij "Uruchom", aby wykonać program
+1. Naciśnij przycisk "Program początkowy", aby załadować przykładowy program
+2. Kliknij "Uruchom", aby wykonać program i "Play", aby zobaczyć jego działanie
 3. Użyj kontrolek krokowych, aby obserwować, jak program demonstruje każdy aspekt zupełności Turinga
 
 ## Podsumowanie
