@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import ForPeteSakePage from "@/app/interpreter";
+import { useState } from 'react';
+import {ForPeteSakePage} from "@/app/interpreter";
 
 export default function Home() {
   const [interpreterCode, setInterpreterCode] = useState<string>('');
-
-  // Function to load the example program
   const loadExampleProgram = async () => {
+
     try {
       const response = await fetch('/docs/turing_completeness_example.fps');
       if (!response.ok) {
@@ -54,11 +53,7 @@ export default function Home() {
                 </a>
               </div>
             </div>
-          <div>
-              <ForPeteSakePage
-                initialCode={interpreterCode || undefined}
-              />
-          </div>
+              <ForPeteSakePage initialCode={interpreterCode || undefined} onCodeReset={setInterpreterCode} />
       </main>
     </div>
   );

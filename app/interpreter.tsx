@@ -1,8 +1,6 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import Head from 'next/head';
+import {useState, useEffect, useRef, useCallback, Dispatch, SetStateAction} from 'react';
 
-// ForPeteSake commands: pit (increment), tip (decrement), pete (move right), etepe (move left), pit? (loop start), ?tip (loop end)
 const TOKEN_REGEX = /(pit\?|\?tip|etepe|pete|pit|tip)/g;
 
 export const metadata = {
@@ -16,8 +14,12 @@ interface Step {
     ip: number;
 }
 
-export default function ForPeteSakePage({ initialCode, onCodeChange }: { initialCode?: string, onCodeChange?: (code: string) => void }) {
-    const defaultCode = `// Przykładowy kod ForPeteSake
+type ForPeteSakeCodeProps = {
+    initialCode: string | undefined;
+    onCodeReset?:  Dispatch<SetStateAction<string>>
+}
+
+const defaultCode = `// Przykładowy kod ForPeteSake
 // Inkrementuje komórkę 5 razy
 pit pit pit pit pit
 // Przesuwa wskaźnik w prawo
@@ -38,27 +40,13 @@ pit?
   etepe
 ?tip`;
 
+const ForPeteSakePage = ({ initialCode, onCodeReset }: ForPeteSakeCodeProps) => {
     const [code, setCode] = useState<string>(initialCode || defaultCode);
     const [steps, setSteps] = useState<Step[]>([]);
     const [currentStep, setCurrentStep] = useState<number>(0);
     const [error, setError] = useState<string | null>(null);
-    const [speed, setSpeed] = useState<number>(500); // Default speed: 500ms
+    const [speed, setSpeed] = useState<number>(500);
     const timer = useRef<NodeJS.Timeout | null>(null);
-
-    // Function to reset the interpreter state and set new code
-    const resetAndSetCode = (newCode: string) => {
-        if (timer.current) {
-            clearInterval(timer.current);
-            timer.current = null;
-        }
-        setCode(newCode);
-        setSteps([]);
-        setCurrentStep(0);
-        setError(null);
-        if (onCodeChange) {
-            onCodeChange(newCode);
-        }
-    };
 
     const runCode = () => {
         try {
@@ -76,10 +64,10 @@ pit?
             const loopStack: number[] = [];
             const loopMap: Record<number, number> = {};
 
-            tokens.forEach((tok, idx) => {
-                if (tok === 'pit?') {
+            tokens.forEach((token, idx) => {
+                if (token === 'pit?') {
                     loopStack.push(idx);
-                } else if (tok === '?tip') {
+                } else if (token === '?tip') {
                     const start = loopStack.pop();
                     if (start === undefined) {
                         throw new Error(`Niepasujący ?tip na pozycji ${idx}. Każda komenda ?tip musi mieć odpowiadającą komendę pit?.`);
@@ -94,7 +82,6 @@ pit?
             }
 
             const trace: Step[] = [];
-            // Add a maximum step limit to prevent browser hanging
             const MAX_STEPS = 10000;
             let stepCount = 0;
 
@@ -103,12 +90,14 @@ pit?
                 trace.push({ tape: [...tape], pointer: ptr, token: cmd, ip });
                 stepCount++;
 
+                let skipIncrement = false;
+
                 switch (cmd) {
                     case 'pit':
-                        tape[ptr] = (tape[ptr] + 1) & 0xff;
+                        tape[ptr] = (tape[ptr] + 1) % 256;
                         break;
                     case 'tip':
-                        tape[ptr] = (tape[ptr] - 1 + 256) & 0xff;
+                        tape[ptr] = tape[ptr] === 0 ? 255 : tape[ptr] - 1;
                         break;
                     case 'pete':
                         ptr = (ptr + 1) % tape.length;
@@ -117,16 +106,24 @@ pit?
                         ptr = (ptr - 1 + tape.length) % tape.length;
                         break;
                     case 'pit?':
-                        if (tape[ptr] === 0) ip = loopMap[ip] as number;
+                        if (tape[ptr] === 0) {
+                            ip = loopMap[ip];
+                            skipIncrement = true; // Już zmieniliśmy ip, nie inkrementujemy
+                        }
                         break;
                     case '?tip':
-                        if (tape[ptr] !== 0) ip = loopMap[ip] as number;
+                        if (tape[ptr] !== 0) {
+                            ip = loopMap[ip];
+                            skipIncrement = true; // Już zmieniliśmy ip, nie inkrementujemy
+                        }
                         break;
                 }
-                ip++;
+
+                if (!skipIncrement) {
+                    ip++;
+                }
             }
 
-            // Check if we hit the step limit
             if (stepCount >= MAX_STEPS) {
                 trace.push({ tape: [...tape], pointer: ptr, token: 'LIMIT', ip });
                 setError("Program przekroczył maksymalną liczbę kroków (10000). Możliwy nieskończony cykl.");
@@ -145,6 +142,7 @@ pit?
     const nextStep = () => {
         setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
     };
+
     const prevStep = () => {
         setCurrentStep((s) => Math.max(s - 1, 0));
     };
@@ -152,41 +150,53 @@ pit?
     const play = () => {
         if (timer.current) return;
         timer.current = setInterval(() => {
-            setCurrentStep((s) => {
-                if (s < steps.length - 1) return s + 1;
+            setCurrentStep((step) => {
+                if (step < steps.length - 1) return step + 1;
                 clearInterval(timer.current!);
                 timer.current = null;
-                return s;
+                return step;
             });
         }, speed);
     };
+
     const pause = () => {
         if (timer.current) clearInterval(timer.current);
         timer.current = null;
     };
 
-    // Reset the interpreter state when initialCode changes
+    const reset = () => {
+        clearExistingTimer();
+        setSteps([]);
+        setCurrentStep(0);
+        setError(null);
+        setCode(defaultCode);
+        if (onCodeReset) {
+            onCodeReset('');
+        }
+    };
+
+    const clearExistingTimer = useCallback(() => {
+        if (timer.current) {
+            clearInterval(timer.current);
+            timer.current = null;
+        }
+    }, []);
+
     useEffect(() => {
         if (initialCode) {
-            if (timer.current) {
-                clearInterval(timer.current);
-                timer.current = null;
-            }
+            clearExistingTimer();
             setCode(initialCode);
             setSteps([]);
             setCurrentStep(0);
             setError(null);
         }
-    }, [initialCode]);
+    }, [initialCode, clearExistingTimer]);
 
-    // Cleanup timer on unmount
     useEffect(() => {
-        return () => { if (timer.current) clearInterval(timer.current); };
-    }, []);
+        return clearExistingTimer;
+    }, [clearExistingTimer]);
 
     return (
-        <>
-            <Head><title>Interpreter ForPeteSake</title></Head>
             <div className="p-6 rounded-lg shadow-md bg-white dark:bg-gray-800 w-full max-w-4xl mx-auto">
                 <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
                     <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">Instrukcja:</h3>
@@ -199,7 +209,8 @@ pit?
                         <li><code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">pit?</code> - początek pętli (jeśli wartość komórki = 0, przeskakuje do odpowiadającego <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">?tip</code>)</li>
                         <li><code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">?tip</code> - koniec pętli (jeśli wartość komórki ≠ 0, wraca do odpowiadającego <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">pit?</code>)</li>
                     </ul>
-                    <p className="text-gray-700 dark:text-gray-300">Kliknij &#34;Uruchom&#34; aby wykonać kod, a następnie użyj przycisków nawigacji aby przechodzić przez kolejne kroki wykonania.</p>
+                    <p className="text-gray-700 dark:text-gray-300">Kliknij &#34;Uruchom&#34; aby wykonać kod, a następnie użyj &#34;Play&#34; lub &#34;Pause&#34; żeby zobaczyć animacje programu.
+                        Możesz też użyć przycisków nawigacji aby przechodzić przez kolejne kroki wykonania.</p>
                 </div>
 
                 <textarea
@@ -211,35 +222,41 @@ pit?
                 <div className="flex flex-wrap gap-2 mb-4">
                     <button
                         onClick={runCode}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors cursor-pointer"
                     >
                         Uruchom
                     </button>
                     <button
                         onClick={prevStep}
                         disabled={currentStep === 0}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 cursor-pointer"
                     >
                         Poprzedni
                     </button>
                     <button
                         onClick={nextStep}
                         disabled={currentStep >= steps.length - 1}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 cursor-pointer"
                     >
                         Następny
                     </button>
                     <button
                         onClick={play}
-                        className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors"
+                        className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors cursor-pointer"
                     >
                         Play
                     </button>
                     <button
                         onClick={pause}
-                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors"
+                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors cursor-pointer"
                     >
                         Pause
+                    </button>
+                    <button
+                        onClick={reset}
+                        className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50 transition-colors cursor-pointer"
+                    >
+                        Reset
                     </button>
                 </div>
 
@@ -296,6 +313,7 @@ pit?
                     </div>
                 )}
             </div>
-        </>
     );
 }
+
+export { ForPeteSakePage };
