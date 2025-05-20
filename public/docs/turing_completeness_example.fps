@@ -1,0 +1,40 @@
+// Program demonstrujący zupełność Turinga w ForPeteSake
+// 1. Rozgałęzienie warunkowe
+// 2. Iteracja
+// 3. Manipulacja pamięcią
+
+// Inicjalizacja: Ustawiamy wartość pierwszej komórki na 3
+pit pit pit
+
+// ITERACJA: Pętla główna wykonuje się 3 razy
+pit?
+  // MANIPULACJA PAMIĘCIĄ: Przesuwamy wskaźnik do komórki 1
+  pete
+
+  // Dodajemy 1 do komórki 1 w każdej iteracji
+  pit
+
+  // MANIPULACJA PAMIĘCIĄ: Przesuwamy wskaźnik z powrotem do komórki 0
+  etepe
+
+  // Zmniejszamy licznik pętli o 1
+  tip
+?tip
+
+// ROZGAŁĘZIENIE WARUNKOWE: Sprawdzamy czy komórka 0 = 0
+// Przesuń do komórki 1 (która ma teraz wartość 3)
+pete
+
+// Dodaj 3 do komórki 1 tylko jeśli komórka 0 = 0
+// (co jest prawdą po zakończeniu pętli)
+etepe
+pit?
+  // Ta część wykona się tylko gdy komórka 0 jest niezerowa
+  pete
+  tip tip tip
+  etepe
+?tip
+
+// W tym momencie:
+// - Komórka 0 ma wartość 0
+// - Komórka 1 ma wartość 3 (po jednym inkremencie w każdej z 3 iteracji)
