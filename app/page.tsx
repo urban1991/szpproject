@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import {ForPeteSakePage} from "@/app/interpreter";
+import Link from "next/link";
 
 const exampleProgram = `// Program demonstrujący zupełność Turinga w ForPeteSake
 // 1. Rozgałęzienie warunkowe
@@ -60,26 +61,26 @@ export default function Home() {
                 Dowiedz się, dlaczego ForPeteSake jest językiem zupełnym w sensie Turinga
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
-                <a
+                <Link
                   href="/docs/turing_completeness_checks.md"
                   target="_blank"
                   className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                 >
                   Weryfikacja zupełności Turinga
-                </a>
+                </Link>
                 <button
                   onClick={() => setInterpreterCode(exampleProgram)}
                   className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
                 >
                   Program przykładowy
                 </button>
-                <a
+                <Link
                   href="/docs/turing_completeness_README.md"
                   target="_blank"
                   className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
                 >
                   Dokumentacja
-                </a>
+                </Link>
               </div>
             </div>
               <ForPeteSakePage initialCode={interpreterCode || undefined} onCodeReset={setInterpreterCode} />
